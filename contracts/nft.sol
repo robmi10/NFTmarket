@@ -30,7 +30,7 @@ contract NftMarketPlace is Ownable, ERC721URIStorage{
     }
 
 
-    function createNft(string memory _tokenURI, uint256 _royalites, uint256 _price) private{
+    function createNft(string memory _tokenURI, uint256 _royalites, uint256 _price) payable public{
         require(msg.value == _price, "To low amount, higher fee.");
         _mint(msg.sender, tokenIdCounter);
         NftMap[tokenIdCounter] = Nft(tokenIdCounter ,payable(msg.sender), payable(msg.sender), _tokenURI, _royalites, _price, false);
@@ -38,7 +38,7 @@ contract NftMarketPlace is Ownable, ERC721URIStorage{
         itemSoldCounter += 1;
     }
 
-    function nftToMarket(uint256 _tokenId, bytes30 _price) public{
+    function nftToMarket(uint256 _tokenId) public{
         require(NftMap[_tokenId].owner == msg.sender, "Only the current owner of the token can put it on sell.");
         uint256 _userTokenId = NftMap[_tokenId].tokenId;
         address _seller = NftMap[_tokenId].seller;
@@ -79,14 +79,11 @@ contract NftMarketPlace is Ownable, ERC721URIStorage{
     function getMyNfts () public view returns(Nft[] memory){
         //only fetch my nfts!
         uint256 itemCount = 0;
-
         for(uint256 i = 0; i <= tokenIdCounter; i++){
             if(NftMap[i].owner == msg.sender){
                 itemCount += 1;
             }
         }
-
-        uint256 tokenOnSaleCounter = tokenIdCounter - itemSoldCounter;
         uint256 thisIndex = 0;
         Nft[] memory items = new Nft[](itemCount);
         for(uint256 i = 0; i <= tokenIdCounter; i++){
@@ -96,8 +93,14 @@ contract NftMarketPlace is Ownable, ERC721URIStorage{
                 thisIndex += 1;
             }
         }
+        return items;
 
     }
+
+    function getNft (uint256 _id) public view returns(address){
+        return NftMap[_id].owner;
+    }
+
     //returns my listed Nfts
     function getMyNftsOnSale () public view returns(Nft[] memory){
         //only fetch my nfts!
@@ -117,5 +120,6 @@ contract NftMarketPlace is Ownable, ERC721URIStorage{
                 thisIndex += 1;
             }
         }
+    return items;
     }
 }
