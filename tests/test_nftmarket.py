@@ -21,9 +21,7 @@ def testBuyNft():
     nftmarket, buyer, player = testCreateNft() 
     #test buying nft
     nftmarket.getNftOnSeller(0)
-    nftmarket.buyNft(0, buyer, player, {'value': price, 'from': buyer })
-    getNewSeller = nftmarket.getNftOnSeller(0)
-    
-    print("buyNft events ->", getNewSeller.events)
+    buynft = nftmarket.buyNft(0, buyer, player, {'value': price, 'from': buyer })
+    print("buyNft events ->", nftmarket.events)
     assert 1 == 3
 

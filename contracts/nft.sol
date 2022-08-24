@@ -52,16 +52,15 @@ contract NftMarketPlace is Ownable, ERC721URIStorage{
 
     function buyNft(uint256 _tokenId, address payable _seller, address payable _currentOwner) payable public{
         require(msg.value == NftMap[_tokenId].price, "To low amount, for the NFT.");
-        uint256 royaltyAmount = 0;
-        uint256 _royaltyAmountToOwner = 0;
-        uint256 _royaltyPercentage = NftMap[_tokenId].royalties;
+        uint256 royaltyAmount;
+
         NftMap[_tokenId].seller = _seller;
-        if(royalties > 0){
-        _royaltyAmountToOwner = msg.value * 100 / _royaltyPercentage;
-        payable(_currentOwner).transfer(_royaltyAmountToOwner); 
+        if(NftMap[_tokenId].royalties > 0){
+        royaltyAmount = msg.value / 100 * NftMap[_tokenId].royalties;
+        payable(NftMap[_tokenId].owner).transfer(royaltyAmount); 
         }
         payable(_currentOwner).transfer(msg.value - royaltyAmount);
-        emit TransferToken(NftMap[_tokenId].owner, _seller, msg.value, _royaltyAmountToOwner);
+        emit TransferToken(NftMap[_tokenId].owner, _seller, msg.value, royaltyAmount);
     }
 
     //return all nfts on sale
