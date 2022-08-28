@@ -2,23 +2,8 @@
 pragma solidity >=0.6.6 <0.9.0;
 //Create a smart contract that keeps an eye of a created auction!
 
-interface IERC721 {
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint tokenId
-    ) external;
-
-    function transferFrom(
-        address,
-        address,
-        uint
-    ) external;
-}
 
 contract Auction{
-
-    IERC721 public nft;
     uint256 public auctionCounter;
     uint256 public nftId;
 
@@ -29,65 +14,86 @@ contract Auction{
   
     mapping(address => uint256) public bidMap;
 
-    address payable seller;
-    bool public auctionStarted;
-    uint256 auctionId;
-    uint256 duration;
-    uint256 bid;
-    bool ended;
-    address public bidder;
-
-    constructor(address _nft, uint256 _nftId, uint256 _startingBid, uint256 _duration){
-        nft = IERC721(_nft);
-        nftId = _nftId;
-        seller = payable (msg.sender);
-        bid = _startingBid;
-        duration = _duration;
+    mapping(uint256 => Auctions) public AuctionMap;
+    
+    struct Auctions{
+        address payable seller;
+        bool auctionStarted;
+        uint256 auctionId;
+        uint256 nftTokenId;
+        uint256 duration;
+        uint256 bid;
+        bool ended;
+        address bidder;
     }
 
-    //func start auction;
-    function startAuction () public  {
-        require(!auctionStarted, "auction started");
-        require(msg.sender != seller, "not the seller");
-
-        nft.transferFrom(msg.sender, address(this), nftId);
-        auctionStarted = true;
-        duration = block.timestamp + duration;
-        emit auctionStartedEvent(msg.sender, bid, nftId);
+    function startAuction (uint256 _nftTokenId, uint256 _duration) public payable {
+        AuctionMap[auctionCounter] = Auctions(payable (msg.sender), true, auctionCounter, _nftTokenId, block.timestamp + _duration, msg.value, false,  msg.sender);
+        auctionCounter += 1;
+        emit auctionStartedEvent(msg.sender, msg.value, _nftTokenId);
     }
     //func put bid on auction
-    function putBid() external payable {
-        require(auctionStarted, "Not started.");
-        require(block.timestamp < duration, "already ended.");
-        require(msg.value > bid, "To low start bid.");
-        bidder = msg.sender;
-        bid = msg.value;
-        if(bidder != address(0)){
-            bidMap[bidder] += bid;
+    function putBid(uint256 _id) external payable {
+        require(AuctionMap[_id].auctionStarted, "Not started.");
+        require(block.timestamp > AuctionMap[auctionCounter].duration, "already ended.");
+        require(msg.value > AuctionMap[auctionCounter].bid, "To low start bid.");
+        AuctionMap[_id].bidder = msg.sender;
+        AuctionMap[_id].bid = msg.value;
+    
+        if(msg.sender != address(0)){
+            bidMap[msg.sender] += msg.value;
         }
-        emit bidEvent(bidder, bid, nftId);
-    }    
+        emit bidEvent(msg.sender, msg.value, nftId);
+    }
     //func check highest big on auction and if its already ended
-
     function widthdraw() external{
-        uint256 balance = bidMap[bidder];
-        bidMap[bidder] = 0;
-        payable(msg.sender).transfer(balance);        
-        emit widthdrawEvent(msg.sender, balance, nftId);
+        uint256 bid = bidMap[msg.sender];
+        bidMap[msg.sender] = 0;
+        payable(msg.sender).transfer(bid);        
+        emit widthdrawEvent(msg.sender, bid, nftId);
     }
 
-    function end() external{
-        require(auctionStarted, "not started");
-        require(block.timestamp >= duration, "duration is over");
-        require(!ended, "it's not ended");
-
-        ended = true;
+    function end(uint256 _id) external{
+        require(AuctionMap[_id].auctionStarted, "not started");
+        require(block.timestamp > AuctionMap[_id].duration, "duration is not over");
+        require(!AuctionMap[_id].ended, "it's not ended");
+        address bidder = AuctionMap[_id].bidder;
+        uint256 bid = AuctionMap[_id].bid;
+        AuctionMap[_id].ended = true;
         if(bidder != address(0)){
-            nft.transferFrom(address(this), bidder, nftId);
-            seller.transfer(bid);
-        }else{
-            nft.transferFrom(address(this), seller, nftId);
+           // nft.transferFrom(address(this), bidder, nftId);
+            AuctionMap[_id].seller.transfer(bid);
         }
         emit EndEvent(msg.sender, bid, nftId);
     }
+
+    function getAlltAuctions() public view returns(Auctions [] memory){
+        Auctions[] memory allAuctions = new Auctions[](auctionCounter);
+        for(uint256 i = 0; i <= auctionCounter; i++){
+            Auctions storage auctionItem = AuctionMap[i];
+            allAuctions[i] = auctionItem;
+        }
+        return allAuctions;
+    }
+
+    function getDurationTime (uint256 _id) public view returns(uint256){
+        return AuctionMap[_id].duration;
+    }
+
+    function getAuctionBidder (uint256 _id) public view returns(address){
+        return AuctionMap[_id].bidder;
+    }
+
+    function getAuctionStatus (uint256 _id) public view returns(bool){
+        return AuctionMap[_id].ended;
+    }
+
+    function getNftTokenId (uint256 _id) public view returns(uint256){
+        return AuctionMap[_id].nftTokenId;
+    }
+
+    function getNftTokenBid (uint256 _id) public view returns(uint256){
+        return AuctionMap[_id].bid;
+    }
+    
 }
