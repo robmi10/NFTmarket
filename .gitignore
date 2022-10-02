@@ -4,3 +4,6 @@ __pycache__
 .hypothesis/
 build/
 reports/
+interfaces/
+node_modules/
+.pytest_cache/

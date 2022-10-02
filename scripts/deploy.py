@@ -12,19 +12,17 @@ def deployNftMarket():
     # auctionSeller = accounts[4]
     # auctionBuyer = accounts[5]
     # auctionHigherBid = accounts[6]
-
     account = accounts.add(config['wallets']["from_key"])
     nftmarket = NftMarketPlace.deploy({"from": account})
     auction = Auction.deploy({"from": account})
-
     return nftmarket, auction
     #return nftmarket, account, player, buyer, secondBuyer, auction, auctionSeller, auctionBuyer, auctionHigherBid
 
 def update_front_end():
-    copy_folder_to_frontend("./build", "../GameDapp/game-dapp/src/chain-info")
+    copy_folder_to_frontend("./build", "../nftmarket/chain-info")
     with open("brownie-config.yaml", "r") as brownie_config:
         config_dict = yaml.load(brownie_config, Loader=yaml.FullLoader)
-        with open("../NFTMARKET/nftmarket/brownie-config.json", "w") as brownie_config_json:
+        with open("../nftmarket/brownie-config.json", "w") as brownie_config_json:
             json.dump(config_dict, brownie_config_json)
         print("Front end updated")
 

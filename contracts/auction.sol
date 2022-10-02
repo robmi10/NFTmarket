@@ -7,10 +7,10 @@ contract Auction{
     uint256 public auctionCounter;
     uint256 public nftId;
 
-    event auctionStartedEvent(address _bidder, uint256 _amount, uint256 _id);
+    event auctionStartedEvent(address _bidder, uint256 _amount, uint256 _id, string _tokenURI, uint256 _duration, uint256 _royalty, uint256 _auctionID);
     event bidEvent(address _bidder, uint256 _amount, uint256 _id);
-    event widthdrawEvent(address _bidder, uint256 _amount, uint256 _id);
-    event EndEvent(address _bidder, uint256 _amount, uint256 _id);
+    event widthdrawEvent(address _owner, address _bidder, uint256 _amount, uint256 _id);
+    event EndEvent(address _owner, address _bidder, uint256 _amount, uint256 _id);
   
     mapping(address => uint256) public bidMap;
 
@@ -27,10 +27,10 @@ contract Auction{
         address bidder;
     }
 
-    function startAuction (uint256 _nftTokenId, uint256 _duration) public payable {
+    function startAuction (uint256 _nftTokenId, uint256 _duration, string memory _tokenURI, uint256 _royalty) public payable {
         AuctionMap[auctionCounter] = Auctions(payable (msg.sender), true, auctionCounter, _nftTokenId, block.timestamp + _duration, msg.value, false,  msg.sender);
+        emit auctionStartedEvent(msg.sender, msg.value, _nftTokenId, _tokenURI, block.timestamp + _duration, _royalty, auctionCounter);
         auctionCounter += 1;
-        emit auctionStartedEvent(msg.sender, msg.value, _nftTokenId);
     }
     //func put bid on auction
     function putBid(uint256 _id) external payable {
@@ -39,18 +39,17 @@ contract Auction{
         require(msg.value > AuctionMap[auctionCounter].bid, "To low start bid.");
         AuctionMap[_id].bidder = msg.sender;
         AuctionMap[_id].bid = msg.value;
-    
         if(msg.sender != address(0)){
             bidMap[msg.sender] += msg.value;
         }
-        emit bidEvent(msg.sender, msg.value, nftId);
+        emit bidEvent(msg.sender, msg.value, _id);
     }
     //func check highest big on auction and if its already ended
-    function widthdraw() external{
+    function widthdraw(uint256 _id) external{
         uint256 bid = bidMap[msg.sender];
         bidMap[msg.sender] = 0;
         payable(msg.sender).transfer(bid);        
-        emit widthdrawEvent(msg.sender, bid, nftId);
+        emit widthdrawEvent(AuctionMap[_id].seller, msg.sender, bid, _id);
     }
 
     function end(uint256 _id) external{
@@ -61,10 +60,9 @@ contract Auction{
         uint256 bid = AuctionMap[_id].bid;
         AuctionMap[_id].ended = true;
         if(bidder != address(0)){
-           // nft.transferFrom(address(this), bidder, nftId);
             AuctionMap[_id].seller.transfer(bid);
         }
-        emit EndEvent(msg.sender, bid, nftId);
+        emit EndEvent(AuctionMap[_id].seller, msg.sender, bid, _id);
     }
 
     function getAlltAuctions() public view returns(Auctions [] memory){

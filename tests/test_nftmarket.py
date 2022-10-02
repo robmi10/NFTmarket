@@ -14,9 +14,11 @@ duration = 2 #1 week in seconds
 def testCreateNft():
     #create NFT
     nftmarket, account, player, buyer, secondBuyer, auction, auctionSeller, auctionBuyer, auctionHigherBid = deployNftMarket()
-    nftmarket.createNft("tokenURIJordan", 10, {'value': fee, 'from': player}, )
+    nftToMarket = nftmarket.createNft("tokenURIJordan", 10, {'value': fee, 'from': player}, )
     deployedAddress = nftmarket.getNft(0)
 
+
+    print("nftmarket.events -->",nftToMarket.events)
     #put nft to NFT market
     nftmarket.nftToMarket(0, price, {'from': player})
     nftOnSale = nftmarket.getNftOnSale(0,{'from': player})

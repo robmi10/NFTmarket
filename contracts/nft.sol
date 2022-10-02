@@ -15,11 +15,11 @@ contract NftMarketPlace is Ownable, ERC721URIStorage, Auction{
     mapping(uint256 => Nft) public NftMap;
     
     uint256 tokenIdCounter;
-    uint256 itemSoldCounter;
     uint256 fee = 0.00060 ether;
-    event TransferToken (address to, address from, uint256 amount, uint256 royalty);
-    event AuctionTransferWinner (address to, address from, uint256 amount);
+    event TransferToken (address to, address from, uint256 amount, uint256 royalty, uint256 id);
+    event AuctionTransferWinner (address to, address from, uint256 amount, uint256 id);
     event NftToMarketEvent (uint256 tokenId, address owner, address seller, string tokenURI, uint256 royalties, uint256 price, bool sale);
+    event NftCreatedMarket (uint256 tokenId, address owner, address seller, string tokenURI, uint256 royalties, bool sale);
 
     struct Nft{
         uint256 tokenId;
@@ -35,8 +35,8 @@ contract NftMarketPlace is Ownable, ERC721URIStorage, Auction{
         require(msg.value == fee, "To low amount, higher fee.");
         _mint(msg.sender, tokenIdCounter);
         NftMap[tokenIdCounter] = Nft(tokenIdCounter ,payable(msg.sender), payable(msg.sender), _tokenURI, _royalites, 0, false);
+        emit NftCreatedMarket(tokenIdCounter, payable(msg.sender), payable(msg.sender), _tokenURI, _royalites, false);
         tokenIdCounter += 1;
-        itemSoldCounter += 1;
     }
 
     function nftToMarket(uint256 _tokenId, uint256 _price) public{
@@ -47,7 +47,6 @@ contract NftMarketPlace is Ownable, ERC721URIStorage, Auction{
         uint256 _royalties = NftMap[_tokenId].royalties;
         uint256 _userPrice = NftMap[_tokenId].price = _price;
         bool _sale = NftMap[_tokenId].sale = true;
-        //itemSoldCounter -= 1;
         emit NftToMarketEvent(_userTokenId ,msg.sender, _seller, _tokenURI, _royalties, _userPrice, _sale);
     }
 
@@ -61,7 +60,7 @@ contract NftMarketPlace is Ownable, ERC721URIStorage, Auction{
         bool _sale = NftMap[_tokenId].sale = true;
         emit NftToMarketEvent(_userTokenId ,msg.sender, _seller, _tokenURI, _royalties, _userPrice, _sale);
     }
-
+    
     function buyNft(uint256 _tokenId, address payable _seller, address payable _currentOwner) payable public{
         require(msg.value == NftMap[_tokenId].price, "To low amount, for the NFT.");
         require(NftMap[_tokenId].sale, "Its not for sale.");
@@ -75,7 +74,7 @@ contract NftMarketPlace is Ownable, ERC721URIStorage, Auction{
 
         payable(_currentOwner).transfer(msg.value - royaltyAmount);
         NftMap[_tokenId].sale = false;
-        emit TransferToken(NftMap[_tokenId].owner, _seller, msg.value, royaltyAmount);
+        emit TransferToken(NftMap[_tokenId].owner, _seller, msg.value, royaltyAmount, _tokenId);
     }
 
     function getAuctionTime (uint256 _id) public view returns(uint256){
@@ -101,7 +100,7 @@ contract NftMarketPlace is Ownable, ERC721URIStorage, Auction{
         uint256 amount = getAuctionNftBid(_id);
         require(block.timestamp > _time);
         NftMap[nftTokenId].seller = payable(_auctionBidder);
-        emit AuctionTransferWinner(NftMap[nftTokenId].owner,msg.sender, amount);
+        emit AuctionTransferWinner(NftMap[nftTokenId].owner,msg.sender, amount, _id);
     }
 
     //return all nfts on sale
