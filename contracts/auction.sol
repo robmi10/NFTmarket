@@ -12,7 +12,9 @@ contract Auction{
     event widthdrawEvent(address _owner, address _bidder, uint256 _amount, uint256 _id);
     event EndEvent(address _owner, address _bidder, uint256 _amount, uint256 _id);
   
-    mapping(address => uint256) public bidMap;
+    //mapping(address => uint256) public bidMap;
+
+    mapping(address => mapping(uint => uint256)) public bidMap;
 
     mapping(uint256 => Auctions) public AuctionMap;
     
@@ -40,16 +42,16 @@ contract Auction{
         AuctionMap[_id].bidder = msg.sender;
         AuctionMap[_id].bid = msg.value;
         if(msg.sender != address(0)){
-            bidMap[msg.sender] += msg.value;
+            bidMap[msg.sender][_id] = msg.value;
         }
         emit bidEvent(AuctionMap[_id].seller, msg.sender, msg.value, _id);
     }
     //func check highest big on auction and if its already ended
     function widthdraw(uint256 _id) external{
         //require that check ur not the highest bidder then u can witdhraw
-        uint256 bid = bidMap[msg.sender];
-        bidMap[msg.sender] = 0;
-        payable(msg.sender).transfer(bid);        
+        uint256 bid = bidMap[msg.sender][_id];
+        bidMap[msg.sender][_id] = 0;
+        payable(msg.sender).transfer(bid);
         emit widthdrawEvent(AuctionMap[_id].seller, msg.sender, bid, _id);
     }
 
