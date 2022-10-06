@@ -8,7 +8,7 @@ contract Auction{
     uint256 public nftId;
 
     event auctionStartedEvent(address _bidder, uint256 _amount, uint256 _id, string _tokenURI, uint256 _duration, uint256 _royalty, uint256 _auctionID);
-    event bidEvent(address _bidder, uint256 _amount, uint256 _id);
+    event bidEvent(address _owner, address _bidder, uint256 _amount, uint256 _id);
     event widthdrawEvent(address _owner, address _bidder, uint256 _amount, uint256 _id);
     event EndEvent(address _owner, address _bidder, uint256 _amount, uint256 _id);
   
@@ -28,8 +28,8 @@ contract Auction{
     }
 
     function startAuction (uint256 _nftTokenId, uint256 _duration, string memory _tokenURI, uint256 _royalty) public payable {
-        AuctionMap[auctionCounter] = Auctions(payable (msg.sender), true, auctionCounter, _nftTokenId, block.timestamp + _duration, msg.value, false,  msg.sender);
-        emit auctionStartedEvent(msg.sender, msg.value, _nftTokenId, _tokenURI, block.timestamp + _duration, _royalty, auctionCounter);
+        AuctionMap[auctionCounter] = Auctions(payable (msg.sender), true, auctionCounter, _nftTokenId, _duration, msg.value, false,  msg.sender);
+        emit auctionStartedEvent(msg.sender, msg.value, _nftTokenId, _tokenURI, _duration, _royalty, auctionCounter);
         auctionCounter += 1;
     }
     //func put bid on auction
@@ -42,10 +42,11 @@ contract Auction{
         if(msg.sender != address(0)){
             bidMap[msg.sender] += msg.value;
         }
-        emit bidEvent(msg.sender, msg.value, _id);
+        emit bidEvent(AuctionMap[_id].seller, msg.sender, msg.value, _id);
     }
     //func check highest big on auction and if its already ended
     function widthdraw(uint256 _id) external{
+        //require that check ur not the highest bidder then u can witdhraw
         uint256 bid = bidMap[msg.sender];
         bidMap[msg.sender] = 0;
         payable(msg.sender).transfer(bid);        
@@ -54,7 +55,7 @@ contract Auction{
 
     function end(uint256 _id) external{
         require(AuctionMap[_id].auctionStarted, "not started");
-        require(block.timestamp > AuctionMap[_id].duration, "duration is not over");
+        require(block.timestamp < AuctionMap[_id].duration, "duration is not over");
         require(!AuctionMap[_id].ended, "it's not ended");
         address bidder = AuctionMap[_id].bidder;
         uint256 bid = AuctionMap[_id].bid;
