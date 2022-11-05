@@ -42,12 +42,13 @@ contract NftMarketPlace is Ownable, ERC721URIStorage, Auction{
     function nftToMarket(uint256 _tokenId, uint256 _price) public{
         require(NftMap[_tokenId].seller == msg.sender, "Only the current owner of the token can put it on sell.");
         uint256 _userTokenId = NftMap[_tokenId].tokenId;
+        address _owner = NftMap[_tokenId].owner;
         address _seller = NftMap[_tokenId].seller;
         string memory _tokenURI = NftMap[_tokenId].tokenURI;
         uint256 _royalties = NftMap[_tokenId].royalties;
         uint256 _userPrice = NftMap[_tokenId].price = _price;
         bool _sale = NftMap[_tokenId].sale = true;
-        emit NftToMarketEvent(_userTokenId ,msg.sender, _seller, _tokenURI, _royalties, _userPrice, _sale);
+        emit NftToMarketEvent(_userTokenId ,_owner, _seller, _tokenURI, _royalties, _userPrice, _sale);
     }
 
       function nftToMarketAuction(uint256 _tokenId, uint256 _price) public{
