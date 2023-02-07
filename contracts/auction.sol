@@ -36,7 +36,7 @@ contract Auction{
     }
     //func put bid on auction
     function putBid(uint256 _id) external payable {
-        require(AuctionMap[_id].auctionStarted, "Not started.");
+        require(!AuctionMap[_id].auctionStarted, "Not started.");
         require(block.timestamp > AuctionMap[auctionCounter].duration, "already ended.");
         require(msg.value > AuctionMap[auctionCounter].bid, "To low start bid.");
         AuctionMap[_id].bidder = msg.sender;
